@@ -43,10 +43,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 when (currentScreen) {
-                    "auth" -> AuthScreen(
-                        onLoginSuccess = { },
-                        authViewModel = authViewModel
-                    )
+                    "auth" -> AuthScreen(authViewModel = authViewModel)
 
                     "success_login" -> SuccessLoginScreen(
                         onAnimationFinished = { 

@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
-import java.util.*
+import com.example.myapplication.ui.theme.*
 
 @Composable
 fun HomeScreen(
@@ -40,21 +40,12 @@ fun HomeScreen(
     var showNotifications by remember { mutableStateOf(false) }
     var showWeightDetails by remember { mutableStateOf(false) }
     var selectedMovementDetail by remember { mutableStateOf<String?>(null) }
-    
-    // Professional Hydration Reminder logic
     var showHydrationReminder by remember { mutableStateOf(true) }
-
-    // --- VITAMOVE SIGNATURE GRADIENT ---
-    val primaryPurple = Color(0xFF6A1B9A)
-    val deepPurple = Color(0xFF4A148C)
-    val blueAccent = Color(0xFF311B92)
-    val premiumGradient = Brush.linearGradient(colors = listOf(primaryPurple, deepPurple, blueAccent))
 
     Scaffold(
         bottomBar = {
-            BottomNavBar(selectedTab, primaryPurple, premiumGradient) { tab ->
-                if (tab == "Profil") onProfileClick()
-                else selectedTab = tab
+            BottomNavBar(selectedTab, VitaMovePurple, VitaMoveGradientHorizontal) { tab ->
+                selectedTab = tab
             }
         },
         containerColor = Color.White
@@ -65,47 +56,107 @@ fun HomeScreen(
                 transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(400)) },
                 label = "TabTransition"
             ) { tab ->
-                if (tab == "Beranda") {
-                    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                        HeaderSection(userName, onProfileClick, { showNotifications = true }, primaryPurple)
-                        
-                        // Hydration Reminder Banner
-                        if (showHydrationReminder && waterCount < 8) {
-                            HydrationBanner(primaryPurple, onWaterAdd) { showHydrationReminder = false }
+                when (tab) {
+                    "Beranda" -> {
+                        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                            HeaderSection(
+                                userName = userName,
+                                onProfileClick = onProfileClick,
+                                onNotificationClick = { showNotifications = true }
+                            )
+
+                            if (showHydrationReminder && waterCount < 8) {
+                                HydrationBanner(VitaMovePurple, onWaterAdd) { showHydrationReminder = false }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            MainWorkoutCard(VitaMoveGradientHorizontal, VitaMovePurple) { onStartWorkout("Full Body VitaMove") }
+
+                            Spacer(modifier = Modifier.height(32.dp))
+
+                            HomeQuickProgress(
+                                accentColor = VitaMovePurple,
+                                onDetailClick = { selectedTab = "Progres" },
+                                onItemClick = { name -> selectedMovementDetail = name }
+                            )
+
+                            Spacer(modifier = Modifier.height(32.dp))
+                            ExerciseCategories(onExerciseClick, VitaMovePurple)
+
+                            Spacer(modifier = Modifier.height(32.dp))
+                            WeightCurveSection(VitaMovePurple, VitaMoveBlue) { showWeightDetails = true }
+
+                            Spacer(modifier = Modifier.height(120.dp))
                         }
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        MainWorkoutCard(premiumGradient, primaryPurple) { onStartWorkout("Full Body VitaMove") }
-                        
-                        Spacer(modifier = Modifier.height(32.dp))
-                        
-                        HomeQuickProgress(
-                            accentColor = primaryPurple,
-                            onDetailClick = { selectedTab = "Progres" },
-                            onItemClick = { name -> selectedMovementDetail = name }
-                        )
-                        
-                        Spacer(modifier = Modifier.height(32.dp))
-                        ExerciseCategories(onExerciseClick, primaryPurple)
-                        
-                        Spacer(modifier = Modifier.height(32.dp))
-                        WeightCurveSection(primaryPurple, blueAccent) { showWeightDetails = true }
-                        
-                        Spacer(modifier = Modifier.height(120.dp))
                     }
-                } else if (tab == "Progres") {
-                    ProgressScreenContent(primaryPurple, premiumGradient) { name -> selectedMovementDetail = name }
+                    "Progres" -> {
+                        ProgressScreenContent(VitaMovePurple, VitaMoveGradientHorizontal) { name -> selectedMovementDetail = name }
+                    }
+                    "Profil" -> {
+                        ProfileTabContent(
+                            userName = userName,
+                            onFullProfileClick = onProfileClick,
+                            onLogoutClick = {
+                                selectedTab = "Beranda"
+                                onProfileClick()
+                            }
+                        )
+                    }
                 }
             }
 
-            if (showNotifications) NotificationOverlay(primaryPurple) { showNotifications = false }
-            if (showWeightDetails) WeightDetailOverlay(primaryPurple) { showWeightDetails = false }
-            
+            if (showNotifications) NotificationOverlay(VitaMovePurple) { showNotifications = false }
+            if (showWeightDetails) WeightDetailOverlay(VitaMovePurple) { showWeightDetails = false }
+
             selectedMovementDetail?.let { name ->
-                MovementDetailOverlay(name, primaryPurple) { selectedMovementDetail = null }
+                MovementDetailOverlay(name, VitaMovePurple) { selectedMovementDetail = null }
             }
         }
+    }
+}
+
+@Composable
+fun ProfileTabContent(
+    userName: String,
+    onFullProfileClick: () -> Unit,
+    onLogoutClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(40.dp))
+
+        Surface(
+            modifier = Modifier.size(100.dp),
+            shape = CircleShape,
+            color = SoftPurpleBg,
+            border = BorderStroke(3.dp, VitaMovePurple.copy(alpha = 0.3f))
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.Person, null, modifier = Modifier.size(56.dp), tint = VitaMovePurple)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(text = userName, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+        Text(text = "VITA CHAMPION", fontSize = 13.sp, color = VitaMovePurple, fontWeight = FontWeight.Black)
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = onFullProfileClick,
+            modifier = Modifier.fillMaxWidth(0.75f).height(52.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = VitaMovePurple)
+        ) {
+            Icon(Icons.Outlined.Person, null, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Lihat Profil Lengkap", fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(120.dp))
     }
 }
 
@@ -116,7 +167,7 @@ fun HydrationBanner(accent: Color, onAdd: () -> Unit, onDismiss: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 8.dp)
             .shadow(8.dp, RoundedCornerShape(24.dp)),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
+        colors = CardDefaults.cardColors(containerColor = WaterLightBg),
         shape = RoundedCornerShape(24.dp)
     ) {
         Row(
@@ -127,7 +178,7 @@ fun HydrationBanner(accent: Color, onAdd: () -> Unit, onDismiss: () -> Unit) {
                 modifier = Modifier.size(40.dp).background(Color.White, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.WaterDrop, null, tint = Color(0xFF2196F3))
+                Icon(Icons.Default.WaterDrop, null, tint = WaterBlue)
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -135,7 +186,7 @@ fun HydrationBanner(accent: Color, onAdd: () -> Unit, onDismiss: () -> Unit) {
                 Text("Jaga hidrasi untuk performa maksimal.", fontSize = 12.sp, color = Color.Gray)
             }
             TextButton(onClick = onAdd) {
-                Text("MINUM", color = Color(0xFF2196F3), fontWeight = FontWeight.Black)
+                Text("MINUM", color = WaterBlue, fontWeight = FontWeight.Black)
             }
             IconButton(onClick = onDismiss) {
                 Icon(Icons.Default.Close, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
@@ -152,7 +203,7 @@ fun WeightCurveSection(accentColor: Color, secondaryColor: Color, onClick: () ->
         Card(
             modifier = Modifier.fillMaxWidth().clickable { onClick() },
             shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+            colors = CardDefaults.cardColors(containerColor = CardBg)
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -165,15 +216,14 @@ fun WeightCurveSection(accentColor: Color, secondaryColor: Color, onClick: () ->
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.TrendingDown, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(16.dp))
-                            Text("-1.2kg", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Default.TrendingDown, null, tint = SuccessGreen, modifier = Modifier.size(16.dp))
+                            Text("-1.2kg", color = SuccessGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
-                // Visual Chart Decorator
+
                 Box(modifier = Modifier.fillMaxWidth().height(80.dp)) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val path = Path()
@@ -181,18 +231,17 @@ fun WeightCurveSection(accentColor: Color, secondaryColor: Color, onClick: () ->
                         path.quadraticBezierTo(size.width * 0.2f, size.height * 0.7f, size.width * 0.4f, size.height * 0.5f)
                         path.quadraticBezierTo(size.width * 0.6f, size.height * 0.3f, size.width * 0.8f, size.height * 0.4f)
                         path.lineTo(size.width, size.height * 0.2f)
-                        
+
                         drawPath(
                             path = path,
                             color = accentColor,
                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
                         )
-                        
-                        // Dots
+
                         drawCircle(accentColor, 6.dp.toPx(), center = Offset(size.width, size.height * 0.2f))
                     }
                 }
-                
+
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Sen", fontSize = 10.sp, color = Color.LightGray)
                     Text("Sel", fontSize = 10.sp, color = Color.LightGray)
@@ -205,20 +254,61 @@ fun WeightCurveSection(accentColor: Color, secondaryColor: Color, onClick: () ->
     }
 }
 
-// ... (Maintain previous HeaderSection, MainWorkoutCard, HomeQuickProgress, ExerciseCategories, etc.)
-
 @Composable
-fun HeaderSection(userName: String, onProfileClick: () -> Unit, onNotificationClick: () -> Unit, accent: Color) {
-    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable { onProfileClick() }.padding(4.dp)) {
-            Surface(modifier = Modifier.size(52.dp), shape = CircleShape, color = accent.copy(alpha = 0.05f)) {
-                Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Person, null, tint = accent, modifier = Modifier.size(32.dp)) }
+fun HeaderSection(
+    userName: String,
+    onProfileClick: () -> Unit,
+    onNotificationClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .shadow(6.dp, RoundedCornerShape(28.dp)),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = VitaMovePurple)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { onProfileClick() }
+                    .padding(end = 8.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.size(54.dp),
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.2f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.Person, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                    }
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+                Column {
+                    Text("Halo,", fontSize = 13.sp, color = Color.White.copy(alpha = 0.7f))
+                    Text(userName, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                }
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column { Text("Halo,", fontSize = 12.sp, color = Color.Gray); Text(userName, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold) }
-        }
-        Surface(modifier = Modifier.size(48.dp).clip(CircleShape).clickable { onNotificationClick() }, color = Color(0xFFF8F9FE), border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))) {
-            Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Notifications, null, tint = accent) }
+
+            Surface(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .clickable { onNotificationClick() },
+                color = Color.White.copy(alpha = 0.2f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Outlined.Notifications, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                }
+            }
         }
     }
 }
@@ -342,16 +432,20 @@ fun BottomNavBar(selected: String, accent: Color, gradient: Brush, onSelected: (
             listOf("Beranda", "Progres", "Profil").forEach { tab ->
                 val isSelected = selected == tab
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally, 
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .clickable { onSelected(tab) }
                         .padding(8.dp)
                 ) {
                     Icon(
-                        imageVector = if (tab == "Beranda") Icons.Default.Home else if (tab == "Progres") Icons.AutoMirrored.Filled.ShowChart else Icons.Default.Person, 
-                        contentDescription = null, 
-                        tint = if (isSelected) accent else Color.LightGray, 
+                        imageVector = when (tab) {
+                            "Beranda" -> Icons.Default.Home
+                            "Progres" -> Icons.AutoMirrored.Filled.ShowChart
+                            else -> Icons.Default.Person
+                        },
+                        contentDescription = null,
+                        tint = if (isSelected) accent else Color.LightGray,
                         modifier = Modifier.size(28.dp)
                     )
                     if (isSelected) {

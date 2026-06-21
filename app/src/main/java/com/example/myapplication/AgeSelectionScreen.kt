@@ -12,24 +12,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.data.preferences.OnboardingPrefs
+import com.example.myapplication.ui.components.OnboardingNextButton
+import com.example.myapplication.ui.theme.*
 import kotlinx.coroutines.launch
 
 @Composable
 fun AgeSelectionScreen(onNextClick: () -> Unit) {
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = 18)
     val coroutineScope = rememberCoroutineScope()
-    
-    // --- VITAMOVE DOMINANT PURPLE GRADIENT ---
-    val primaryPurple = Color(0xFF6A1B9A) // Purple 800
-    val deepPurple = Color(0xFF4A148C)    // Purple 900
-    val blueAccent = Color(0xFF311B92)    // Indigo Blue
-    val designerGradient = Brush.linearGradient(colors = listOf(primaryPurple, deepPurple, blueAccent))
+    val context = LocalContext.current
+    val prefs = remember { OnboardingPrefs(context) }
 
     Column(
         modifier = Modifier
@@ -70,7 +69,7 @@ fun AgeSelectionScreen(onNextClick: () -> Unit) {
                 modifier = Modifier
                     .size(width = 100.dp, height = 80.dp)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(primaryPurple.copy(alpha = 0.05f))
+                    .background(VitaMovePurple.copy(alpha = 0.05f))
             )
 
             LazyRow(
@@ -84,12 +83,12 @@ fun AgeSelectionScreen(onNextClick: () -> Unit) {
                 items(100) { index ->
                     val age = index + 1
                     val isSelected = listState.firstVisibleItemIndex == index
-                    
+
                     Text(
                         text = age.toString(),
                         fontSize = if (isSelected) 48.sp else 24.sp,
                         fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
-                        color = if (isSelected) primaryPurple else Color.LightGray,
+                        color = if (isSelected) VitaMovePurple else Color.LightGray,
                         modifier = Modifier.clickable {
                             coroutineScope.launch { listState.animateScrollToItem(index) }
                         }
@@ -100,24 +99,11 @@ fun AgeSelectionScreen(onNextClick: () -> Unit) {
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(designerGradient)
-                .clickable { onNextClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "LANJUTKAN",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 1.sp
-            )
+        OnboardingNextButton {
+            prefs.age = listState.firstVisibleItemIndex + 1
+            onNextClick()
         }
-        
+
         Spacer(modifier = Modifier.height(40.dp))
     }
 }

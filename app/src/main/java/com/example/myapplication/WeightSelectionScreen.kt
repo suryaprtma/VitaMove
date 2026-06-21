@@ -15,23 +15,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.data.preferences.OnboardingPrefs
+import com.example.myapplication.ui.components.OnboardingNextButton
+import com.example.myapplication.ui.theme.*
 import kotlin.math.roundToInt
 
 @Composable
 fun WeightSelectionScreen(onNextClick: () -> Unit) {
     var weight by remember { mutableFloatStateOf(70f) }
-    
-    // --- VITAMOVE DOMINANT PURPLE GRADIENT ---
-    val primaryPurple = Color(0xFF6A1B9A) // Purple 800
-    val deepPurple = Color(0xFF4A148C)    // Purple 900
-    val blueAccent = Color(0xFF311B92)    // Indigo Blue
-    val designerGradient = Brush.linearGradient(colors = listOf(primaryPurple, deepPurple, blueAccent))
+    val context = LocalContext.current
+    val prefs = remember { OnboardingPrefs(context) }
 
     Column(
         modifier = Modifier
@@ -64,26 +63,24 @@ fun WeightSelectionScreen(onNextClick: () -> Unit) {
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // --- WEIGHT DISPLAY ---
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 text = weight.roundToInt().toString(),
                 fontSize = 80.sp,
                 fontWeight = FontWeight.Black,
-                color = primaryPurple
+                color = VitaMovePurple
             )
             Text(
                 text = "kg",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = primaryPurple,
+                color = VitaMovePurple,
                 modifier = Modifier.padding(bottom = 16.dp, start = 4.dp)
             )
         }
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        // --- PROFESSIONAL RULER PICKER ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -102,7 +99,7 @@ fun WeightSelectionScreen(onNextClick: () -> Unit) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val center = size.width / 2
                 val spacing = 20.dp.toPx()
-                
+
                 for (i in -20..20) {
                     val currentTick = weight.roundToInt() + i
                     if (currentTick in 30..200) {
@@ -112,7 +109,7 @@ fun WeightSelectionScreen(onNextClick: () -> Unit) {
                         val alpha = 1f - (kotlin.math.abs(x - center) / center)
 
                         drawLine(
-                            color = primaryPurple.copy(alpha = alpha.coerceIn(0f, 1f)),
+                            color = VitaMovePurple.copy(alpha = alpha.coerceIn(0f, 1f)),
                             start = Offset(x, size.height / 2 - height / 2),
                             end = Offset(x, size.height / 2 + height / 2),
                             strokeWidth = thickness
@@ -120,36 +117,21 @@ fun WeightSelectionScreen(onNextClick: () -> Unit) {
                     }
                 }
             }
-            
-            // Indikator Fokus Tengah
+
             Box(
                 modifier = Modifier
                     .width(4.dp)
                     .height(60.dp)
                     .clip(CircleShape)
-                    .background(blueAccent)
+                    .background(VitaMoveBlue)
             )
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // --- PREMIUM GRADIENT BUTTON ---
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(designerGradient)
-                .clickable { onNextClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "LANJUTKAN",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 1.sp
-            )
+        OnboardingNextButton {
+            prefs.weight = weight
+            onNextClick()
         }
 
         Spacer(modifier = Modifier.height(40.dp))

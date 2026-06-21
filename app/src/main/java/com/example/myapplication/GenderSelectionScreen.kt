@@ -15,22 +15,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.data.preferences.OnboardingPrefs
+import com.example.myapplication.ui.components.OnboardingNextButton
+import com.example.myapplication.ui.theme.*
 
 @Composable
 fun GenderSelectionScreen(onNextClick: () -> Unit) {
     var selectedGender by remember { mutableStateOf("") }
-
-    // --- VITAMOVE DOMINANT PURPLE GRADIENT ---
-    val primaryPurple = Color(0xFF6A1B9A) // Purple 800
-    val deepPurple = Color(0xFF4A148C)    // Purple 900
-    val blueAccent = Color(0xFF311B92)    // Indigo Blue
-    val designerGradient = Brush.linearGradient(colors = listOf(primaryPurple, deepPurple, blueAccent))
+    val context = LocalContext.current
+    val prefs = remember { OnboardingPrefs(context) }
 
     Column(
         modifier = Modifier
@@ -72,7 +71,7 @@ fun GenderSelectionScreen(onNextClick: () -> Unit) {
                 label = "Laki-laki",
                 icon = Icons.Default.Male,
                 isSelected = selectedGender == "male",
-                activeColor = primaryPurple,
+                activeColor = VitaMovePurple,
                 modifier = Modifier.weight(1f),
                 onClick = { selectedGender = "male" }
             )
@@ -88,24 +87,11 @@ fun GenderSelectionScreen(onNextClick: () -> Unit) {
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(if (selectedGender.isNotEmpty()) designerGradient else Brush.linearGradient(listOf(Color.LightGray, Color.LightGray)))
-                .clickable(enabled = selectedGender.isNotEmpty()) { onNextClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "LANJUTKAN",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 1.sp
-            )
+        OnboardingNextButton(enabled = selectedGender.isNotEmpty()) {
+            prefs.gender = selectedGender
+            onNextClick()
         }
-        
+
         Spacer(modifier = Modifier.height(40.dp))
     }
 }
@@ -119,7 +105,7 @@ fun GenderCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val backgroundColor = if (isSelected) activeColor.copy(alpha = 0.05f) else Color(0xFFF8F9FE)
+    val backgroundColor = if (isSelected) activeColor.copy(alpha = 0.05f) else CardBg
     val borderColor = if (isSelected) activeColor else Color.Transparent
 
     Box(

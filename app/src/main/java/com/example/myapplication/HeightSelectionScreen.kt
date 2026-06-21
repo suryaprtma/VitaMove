@@ -15,23 +15,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.data.preferences.OnboardingPrefs
+import com.example.myapplication.ui.components.OnboardingNextButton
+import com.example.myapplication.ui.theme.*
 import kotlin.math.roundToInt
 
 @Composable
 fun HeightSelectionScreen(onNextClick: () -> Unit) {
     var height by remember { mutableFloatStateOf(170f) }
-    
-    // --- VITAMOVE DOMINANT PURPLE GRADIENT ---
-    val primaryPurple = Color(0xFF6A1B9A) // Purple 800
-    val deepPurple = Color(0xFF4A148C)    // Purple 900
-    val blueAccent = Color(0xFF311B92)    // Indigo Blue
-    val designerGradient = Brush.linearGradient(colors = listOf(primaryPurple, deepPurple, blueAccent))
+    val context = LocalContext.current
+    val prefs = remember { OnboardingPrefs(context) }
 
     Column(
         modifier = Modifier
@@ -75,13 +74,13 @@ fun HeightSelectionScreen(onNextClick: () -> Unit) {
                         text = height.roundToInt().toString(),
                         fontSize = 80.sp,
                         fontWeight = FontWeight.Black,
-                        color = primaryPurple
+                        color = VitaMovePurple
                     )
                     Text(
                         text = "cm",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = primaryPurple,
+                        color = VitaMovePurple,
                         modifier = Modifier.padding(bottom = 16.dp, start = 4.dp)
                     )
                 }
@@ -107,7 +106,7 @@ fun HeightSelectionScreen(onNextClick: () -> Unit) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val center = size.height / 2
                     val spacing = 15.dp.toPx()
-                    
+
                     for (i in -30..30) {
                         val currentTick = height.roundToInt() + i
                         if (currentTick in 100..250) {
@@ -117,7 +116,7 @@ fun HeightSelectionScreen(onNextClick: () -> Unit) {
                             val alpha = 1f - (kotlin.math.abs(y - center) / center)
 
                             drawLine(
-                                color = primaryPurple.copy(alpha = alpha.coerceIn(0f, 1f)),
+                                color = VitaMovePurple.copy(alpha = alpha.coerceIn(0f, 1f)),
                                 start = Offset(0f, y),
                                 end = Offset(width, y),
                                 strokeWidth = thickness
@@ -125,36 +124,22 @@ fun HeightSelectionScreen(onNextClick: () -> Unit) {
                         }
                     }
                 }
-                
+
                 Box(
                     modifier = Modifier
                         .height(4.dp)
                         .width(60.dp)
                         .clip(CircleShape)
-                        .background(blueAccent)
+                        .background(VitaMoveBlue)
                 )
             }
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // --- PREMIUM GRADIENT BUTTON ---
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(designerGradient)
-                .clickable { onNextClick() },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "LANJUTKAN",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 1.sp
-            )
+        OnboardingNextButton {
+            prefs.height = height
+            onNextClick()
         }
 
         Spacer(modifier = Modifier.height(40.dp))
