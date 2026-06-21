@@ -3,96 +3,140 @@ package com.example.myapplication.data.repository
 import android.content.Context
 import com.example.myapplication.data.model.*
 import com.example.myapplication.data.preferences.SessionManager
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.delay
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.userProfileChangeRequest
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.tasks.await
 
 class AuthRepository(context: Context) {
+    private val auth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
     private val sessionManager = SessionManager(context)
-    private val prefs = context.getSharedPreferences("user_db_permanent", Context.MODE_PRIVATE)
-    private val gson = Gson()
 
-    // Mengambil database user dari penyimpanan HP agar tidak hilang
-    private fun getUserDatabase(): MutableMap<String, Pair<User, String>> {
-        val json = prefs.getString("users_list", null)
-        return if (json == null) {
-            // Akun admin default untuk masuk cepat
-            mutableMapOf(
-                "admin@fitnes.com" to (User(uid = "1", fullName = "Admin Fitnes", email = "admin@fitnes.com") to "admin123")
-            )
-        } else {
-            val type = object : TypeToken<MutableMap<String, Pair<User, String>>>() {}.type
-            gson.fromJson(json, type)
-        }
-    }
-
-    private fun saveUserDatabase(db: Map<String, Pair<User, String>>) {
-        val json = gson.toJson(db)
-        prefs.edit().putString("users_list", json).apply()
-    }
-
-    /**
-     * LOGIKA LOGIN: Langsung ke Beranda
-     */
     suspend fun login(request: LoginRequest): AuthResult<User> {
-        delay(1000)
-        val email = request.emailOrUsername.trim()
-        val password = request.password
+        return try {
+            val authResult = auth.signInWithEmailAndPassword(
+                request.emailOrUsername.trim(),
+                request.password
+            ).await()
 
-        val db = getUserDatabase()
-        val entry = db[email] ?: return AuthResult.Error(Exception("Akun tidak ditemukan. Silakan daftar."))
-        
-        return if (entry.second == password) {
-            val user = entry.first
+            val uid = authResult.user?.uid
+                ?: return AuthResult.Error(Exception("Gagal mendapatkan data user"))
+
+            val userDoc = firestore.collection("users").document(uid).get().await()
+            val user = userDoc.toObject(User::class.java)
+                ?: return AuthResult.Error(Exception("Data user tidak ditemukan"))
+
             saveSession(user)
             AuthResult.Success(user)
-        } else {
-            AuthResult.Error(Exception("Password salah!"))
+        } catch (e: Exception) {
+            val message = when {
+                e.message?.contains("There is no user record") == true ->
+                    "Akun tidak ditemukan. Silakan daftar."
+                e.message?.contains("The password is invalid") == true ->
+                    "Password salah!"
+                e.message?.contains("email address is badly formatted") == true ->
+                    "Format email tidak valid"
+                e.message?.contains("The user may have been deleted") == true ->
+                    "Akun tidak ditemukan"
+                else -> e.message ?: "Login gagal"
+            }
+            AuthResult.Error(Exception(message))
         }
     }
 
-    /**
-     * LOGIKA DAFTAR: Harus isi data kesehatan (Gender, dll)
-     */
     suspend fun register(request: RegisterRequest): AuthResult<User> {
-        delay(1200)
-        val email = request.email.trim()
-        val db = getUserDatabase()
-        
-        if (db.containsKey(email)) {
-            return AuthResult.Error(Exception("Email sudah digunakan."))
-        }
+        return try {
+            val authResult = auth.createUserWithEmailAndPassword(
+                request.email.trim(),
+                request.password
+            ).await()
 
-        val newUser = User(
-            uid = "user_${System.currentTimeMillis()}",
-            username = email.substringBefore("@"),
-            email = email,
-            fullName = request.fullName
-        )
-        
-        db[email] = newUser to request.password
-        saveUserDatabase(db)
-        saveSession(newUser)
-        return AuthResult.Success(newUser)
+            val uid = authResult.user?.uid
+                ?: return AuthResult.Error(Exception("Registrasi gagal"))
+
+            val user = User(
+                uid = uid,
+                username = request.email.trim().substringBefore("@"),
+                email = request.email.trim(),
+                fullName = request.fullName.trim(),
+                address = request.address.trim(),
+                phone = request.phone.trim()
+            )
+
+            firestore.collection("users").document(uid)
+                .set(user, SetOptions.merge())
+                .await()
+
+            authResult.user?.updateProfile(
+                userProfileChangeRequest {
+                    displayName = request.fullName.trim()
+                }
+            )?.await()
+
+            saveSession(user)
+            AuthResult.Success(user)
+        } catch (e: Exception) {
+            val message = when {
+                e.message?.contains("The email address is already in use") == true ->
+                    "Email sudah digunakan."
+                e.message?.contains("The email address is badly formatted") == true ->
+                    "Format email tidak valid"
+                e.message?.contains("The given password is weak") == true ->
+                    "Password terlalu lemah, minimal 6 karakter"
+                e.message?.contains("The email address is already in use by another account") == true ->
+                    "Email sudah terdaftar"
+                else -> e.message ?: "Registrasi gagal"
+            }
+            AuthResult.Error(Exception(message))
+        }
+    }
+
+    suspend fun getCurrentUserFromFirestore(): User? {
+        val firebaseUser = auth.currentUser ?: return null
+        return try {
+            val userDoc = firestore.collection("users")
+                .document(firebaseUser.uid)
+                .get()
+                .await()
+            userDoc.toObject(User::class.java)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun logout() {
+        auth.signOut()
+        sessionManager.clearSession()
+    }
+
+    fun isLoggedIn(): Boolean {
+        return auth.currentUser != null || sessionManager.isLoggedIn()
+    }
+
+    fun getCurrentUser(): User? {
+        val firebaseUser = auth.currentUser
+        if (firebaseUser != null) {
+            return User(
+                uid = firebaseUser.uid,
+                email = firebaseUser.email ?: "",
+                username = firebaseUser.displayName ?: firebaseUser.email?.substringBefore("@") ?: "",
+                fullName = firebaseUser.displayName ?: ""
+            )
+        }
+        if (sessionManager.isLoggedIn()) {
+            return User(
+                uid = sessionManager.getUid() ?: "",
+                email = sessionManager.getEmail() ?: "",
+                username = sessionManager.getUsername() ?: "",
+                fullName = sessionManager.getFullName() ?: ""
+            )
+        }
+        return null
     }
 
     private fun saveSession(user: User) {
         sessionManager.saveUserSession(user.uid, user.email, user.username, user.fullName)
-    }
-
-    fun logout() {
-        sessionManager.clearSession()
-    }
-
-    fun isLoggedIn(): Boolean = sessionManager.isLoggedIn()
-
-    fun getCurrentUser(): User? {
-        if (!isLoggedIn()) return null
-        return User(
-            uid = sessionManager.getUid() ?: "",
-            email = sessionManager.getEmail() ?: "",
-            username = sessionManager.getUsername() ?: "",
-            fullName = sessionManager.getFullName() ?: ""
-        )
     }
 }

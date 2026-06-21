@@ -15,7 +15,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         val repository = AuthRepository(this)
-        repository.logout() // KEMBALIKAN: Paksa logout agar halaman login muncul kembali
         
         enableEdgeToEdge()
         setContent {

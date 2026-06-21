@@ -1,41 +1,29 @@
 {
   "project_info": {
-    "project_number": "123456789",
-    "firebase_url": "https://myapplication-project.firebaseio.com",
-    "project_id": "myapplication-project",
-    "storage_bucket": "myapplication-project.appspot.com"
+    "project_number": "489595577747",
+    "project_id": "vitamove-53e40",
+    "storage_bucket": "vitamove-53e40.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789:android:abcdef1234567890",
+        "mobilesdk_app_id": "1:489595577747:android:dbd4dc1e81e9cc1c14b466",
         "android_client_info": {
           "package_name": "com.example.myapplication"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAbCdEfGhIjKlMnOpQrStUvWxYz1234567890"
+          "current_key": "AIzaSyCjvwqkiFERJ5zrHgSEDFmZMUSuc1M5shk"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
   ],
   "configuration_version": "1"
 }
-
